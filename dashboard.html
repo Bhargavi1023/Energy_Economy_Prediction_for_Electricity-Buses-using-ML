@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APSRTC Green Saptagiri Electric Bus — Tirupati</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;}
+.header{background:#1e293b;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #334155;}
+.header h1{font-size:18px;color:#38bdf8;}
+.header .info{font-size:13px;color:#94a3b8;}
+.center-wrap{display:flex;justify-content:center;align-items:center;min-height:90vh;}
+.auth-box{background:#1e293b;border-radius:14px;padding:36px;width:440px;border:1px solid #334155;}
+.auth-box h2{color:#38bdf8;margin-bottom:22px;text-align:center;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;}
+.fg input,.fg select{width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:14px;}
+.btn{width:100%;padding:11px;background:#0ea5e9;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:700;margin-top:6px;}
+.btn:hover{background:#0284c7;}
+.btn-green{background:#16a34a;}.btn-green:hover{background:#15803d;}
+.err{color:#ef4444;font-size:13px;margin-top:8px;text-align:center;}
+.suc{color:#4ade80;font-size:13px;margin-top:8px;text-align:center;}
+.switch-link{text-align:center;margin-top:16px;font-size:13px;color:#64748b;}
+.switch-link a{color:#38bdf8;cursor:pointer;text-decoration:none;}
+.drivers-list{margin-top:14px;}
+.driver-item{display:flex;justify-content:space-between;padding:8px 12px;background:#0f172a;border-radius:8px;margin-bottom:6px;font-size:13px;border:1px solid #1e3a5f;}
+.driver-item .dname{color:#e2e8f0;font-weight:700;}
+.driver-item .dlicense{color:#64748b;font-size:12px;}
+/* DIRECTION */
+.direction-wrap{display:none;justify-content:center;align-items:center;min-height:90vh;}
+.direction-box{background:#1e293b;border-radius:14px;padding:36px;width:500px;border:1px solid #334155;text-align:center;}
+.direction-box h2{color:#38bdf8;margin-bottom:8px;font-size:20px;}
+.direction-box p{color:#64748b;font-size:13px;margin-bottom:24px;}
+.dir-options{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.dir-card{background:#0f172a;border:2px solid #334155;border-radius:12px;padding:20px 14px;cursor:pointer;transition:all 0.2s;text-align:left;}
+.dir-card:hover{border-color:#38bdf8;background:#1e3a5f;}
+.dir-card.selected{border-color:#22c55e;background:#14532d;}
+.dir-icon{font-size:28px;margin-bottom:8px;text-align:center;}
+.dir-arrow{font-size:18px;color:#38bdf8;margin:6px 0;text-align:center;}
+.dtitle{font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:8px;text-align:center;}
+.dir-card.selected .dtitle{color:#4ade80;}
+.stop-list{font-size:12px;color:#64748b;line-height:2;}
+.stop-item{display:flex;align-items:center;gap:6px;}
+.dot-s{width:8px;height:8px;border-radius:50%;background:#38bdf8;flex-shrink:0;}
+.stop-item.last .dot-s{background:#22c55e;}
+/* ANALYSIS */
+.analysis-wrap{display:none;max-width:720px;margin:40px auto;padding:20px;}
+.analysis-box{background:#1e293b;border-radius:14px;padding:28px;border:1px solid #334155;}
+.analysis-box h2{color:#38bdf8;margin-bottom:20px;font-size:18px;}
+.result-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1e3a5f;font-size:14px;align-items:center;}
+.result-row .label{color:#94a3b8;}.result-row .val{font-weight:700;}
+.status-ok{background:#14532d;color:#86efac;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;}
+.status-bad{background:#450a0a;color:#fca5a5;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700;}
+.breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;}
+.bk-item{background:#0f172a;border-radius:8px;padding:12px;border:1px solid #1e3a5f;}
+.bk-item .bk-label{font-size:11px;color:#64748b;margin-bottom:4px;}
+.bk-item .bk-val{font-size:20px;font-weight:700;color:#a78bfa;}
+.bk-item .bk-unit{font-size:11px;color:#64748b;}
+.conditions-box{background:#0f172a;border-radius:8px;padding:12px;border:1px solid #1e3a5f;margin:10px 0;font-size:13px;}
+.conditions-box .ct{color:#94a3b8;margin-bottom:4px;}
+.conditions-box span{color:#38bdf8;font-weight:700;}
+.stop-limit-box{background:#422006;border:1px solid #f97316;border-radius:10px;padding:14px;margin:14px 0;}
+.stop-limit-box .title{color:#fdba74;font-weight:700;font-size:15px;}
+.stop-limit-box .detail{color:#fed7aa;font-size:13px;margin-top:6px;line-height:1.6;}
+.station-info{background:#0f172a;border-radius:10px;padding:14px;margin:14px 0;border:1px solid #22c55e;}
+.station-info .sname{color:#4ade80;font-weight:700;font-size:15px;}
+.station-info .sdetail{color:#94a3b8;font-size:13px;margin-top:4px;}
+.critical-block{background:#450a0a;border:2px solid #ef4444;border-radius:12px;padding:20px;margin:16px 0;text-align:center;}
+.critical-block .cb-title{color:#ef4444;font-size:18px;font-weight:700;margin-bottom:10px;}
+.critical-block .cb-msg{color:#fca5a5;font-size:14px;line-height:1.7;margin-bottom:14px;}
+.critical-block .cb-action{color:#fde047;font-size:13px;font-weight:700;background:#422006;border:1px solid #eab308;border-radius:8px;padding:10px;margin-top:8px;}
+/* CHARGING OVERLAY */
+.charging-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.88);z-index:9999;flex-direction:column;align-items:center;justify-content:center;}
+.charging-overlay.show{display:flex;}
+.charging-box{background:#1e293b;border:3px solid #22c55e;border-radius:20px;padding:40px;text-align:center;width:420px;}
+.charging-box h2{color:#22c55e;font-size:22px;margin-bottom:16px;}
+.charging-anim{font-size:60px;animation:cpulse 1s infinite;}
+@keyframes cpulse{0%,100%{transform:scale(1);}50%{transform:scale(1.15);}}
+.charging-progress{height:20px;background:#0f172a;border-radius:10px;margin:20px 0;overflow:hidden;border:1px solid #334155;}
+.charging-fill{height:100%;background:linear-gradient(90deg,#22c55e,#4ade80);border-radius:10px;transition:width 0.5s;}
+.charging-pct{font-size:40px;font-weight:700;color:#4ade80;margin:10px 0;}
+.charging-msg{color:#94a3b8;font-size:13px;}
+.charging-timer{color:#38bdf8;font-size:22px;font-weight:700;margin:10px 0;}
+/* MAIN */
+.main{display:none;height:calc(100vh - 52px);}
+.left-panel{width:340px;height:100%;overflow-y:auto;background:#1e293b;border-right:1px solid #334155;float:left;padding:14px;}
+.map-area{margin-left:340px;height:100%;}
+#map{width:100%;height:100%;}
+.card{background:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #1e3a5f;}
+.card h3{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat{background:#1e3a5f;border-radius:8px;padding:10px 12px;}
+.stat .v{font-size:22px;font-weight:700;color:#38bdf8;}
+.stat .u{font-size:11px;color:#64748b;margin-top:2px;}
+.bat-bar{height:12px;background:#1e293b;border-radius:6px;margin-top:8px;overflow:hidden;}
+.bat-fill{height:100%;border-radius:6px;transition:all .5s;}
+.alert{display:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:10px;line-height:1.5;}
+.alert.critical{background:#450a0a;border:1px solid #ef4444;color:#fca5a5;display:block;}
+.alert.low{background:#431407;border:1px solid #f97316;color:#fdba74;display:block;}
+.alert.warn{background:#422006;border:1px solid #eab308;color:#fde047;display:block;}
+.charge-banner{display:none;background:#1e3a5f;border:2px solid #38bdf8;border-radius:10px;padding:14px;margin-bottom:12px;}
+.charge-banner .cb-title{color:#38bdf8;font-weight:700;font-size:14px;margin-bottom:8px;}
+.charge-banner .cb-station{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #334155;font-size:13px;}
+.cb-dist{color:#4ade80;font-weight:700;font-size:15px;}
+.cb-rec{font-size:12px;padding:3px 8px;border-radius:6px;font-weight:700;margin-top:4px;display:inline-block;}
+.rec-safe{background:#14532d;color:#86efac;}.rec-warn{background:#422006;color:#fde047;}.rec-crit{background:#450a0a;color:#fca5a5;}
+.stop-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1e293b;font-size:12px;align-items:center;}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+.bg{background:#14532d;color:#86efac;}.bo{background:#431407;color:#fdba74;}.br{background:#450a0a;color:#fca5a5;}
+.btn-sm{padding:8px 14px;background:#0ea5e9;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:700;width:100%;}
+.btn-end{background:#ef4444;}
+.pax-card{background:#0f172a;border:2px solid #22c55e;border-radius:12px;padding:16px;margin-bottom:12px;text-align:center;}
+.pax-number{font-size:48px;font-weight:700;color:#22c55e;line-height:1;}
+.pax-label{font-size:12px;color:#64748b;margin-top:4px;}
+.pax-bar-wrap{background:#1e293b;border-radius:6px;height:10px;margin-top:10px;overflow:hidden;}
+.pax-bar{height:100%;border-radius:6px;background:#22c55e;transition:width .5s;}
+.dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:5px;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.voice-indicator{background:#0f172a;border:1px solid #7c3aed;border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:12px;color:#a78bfa;}
+.voice-dot{width:8px;height:8px;border-radius:50%;background:#7c3aed;display:inline-block;}
+.voice-dot.speaking{animation:vpulse 0.5s infinite;background:#a78bfa;}
+@keyframes vpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.4)}}
+.next-stop-btn{width:100%;padding:10px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:700;margin-bottom:8px;}
+.next-stop-btn:hover{background:#6d28d9;}
+.next-stop-btn:disabled{background:#334155;cursor:not-allowed;}
+.sync-status{background:#0f172a;border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:11px;display:flex;align-items:center;gap:6px;border:1px solid #1e3a5f;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;}
+.sync-dot.ok{background:#22c55e;animation:blink 2s infinite;}
+</style>
+</head>
+<body>
+
+<!-- CHARGING OVERLAY -->
+<div class="charging-overlay" id="chargingOverlay">
+  <div class="charging-box">
+    <h2>⚡ Charging in Progress</h2>
+    <div class="charging-anim">🔋</div>
+    <div class="charging-pct" id="chargePct">0%</div>
+    <div class="charging-progress"><div class="charging-fill" id="chargeFill" style="width:0%"></div></div>
+    <div class="charging-timer" id="chargeTimer">60s remaining</div>
+    <div class="charging-msg" id="chargeMsg">Battery charging... please wait</div>
+  </div>
+</div>
+
+<div class="header">
+  <h1>⚡ APSRTC Green Saptagiri Electric Bus <span id="headerRoute">— Tirupati Route</span></h1>
+  <div class="info" id="hinfo">Not logged in</div>
+</div>
+
+<!-- LOGIN -->
+<div class="center-wrap" id="loginWrap">
+  <div class="auth-box">
+    <h2>Driver Login</h2>
+    <div class="fg"><label>License Number</label><input id="lic" type="text" placeholder="e.g. AP03-2021-0001234"></div>
+    <div class="fg"><label>Password</label><input id="pwd" type="password" placeholder="Enter password"></div>
+    <button class="btn" onclick="doLogin()">Login</button>
+    <div class="err" id="lerr"></div>
+    <div class="switch-link">New driver? <a onclick="showRegister()">Register here</a></div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="center-wrap" id="registerWrap" style="display:none;">
+  <div class="auth-box">
+    <h2>Register New Driver</h2>
+    <div class="fg"><label>Full Name</label><input id="regName" type="text" placeholder="e.g. Ravi Kumar"></div>
+    <div class="fg"><label>License Number</label><input id="regLicense" type="text" placeholder="e.g. AP03-2023-0012345"></div>
+    <div class="fg"><label>Phone Number</label><input id="regPhone" type="text" placeholder="e.g. 9876543210"></div>
+    <div class="fg"><label>Password</label><input id="regPwd" type="password" placeholder="Create a password"></div>
+    <button class="btn btn-green" onclick="doRegister()">Register</button>
+    <div class="err" id="rerr"></div><div class="suc" id="rsuc"></div>
+    <div class="switch-link">Already registered? <a onclick="showLogin()">Login here</a></div>
+    <div style="margin-top:20px;border-top:1px solid #334155;padding-top:14px;">
+      <div style="font-size:12px;color:#64748b;margin-bottom:8px;">Registered Drivers:</div>
+      <div id="driversList" class="drivers-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DIRECTION SELECTOR -->
+<div class="direction-wrap" id="directionWrap">
+  <div class="direction-box">
+    <h2> Select Trip Direction</h2>
+    <p>Choose the direction you are driving today</p>
+    <div class="dir-options">
+      <div class="dir-card" id="dirFwd" onclick="selectDirection('forward')">
+        <div class="dtitle">Tirupati → Tirumala</div>
+        <div class="dir-arrow">⬇</div>
+        <div class="stop-list">
+          <div class="stop-item"><div class="dot-s"></div>Tirupati CBS</div>
+          <div class="stop-item"><div class="dot-s"></div>Alipiri</div>
+          <div class="stop-item"><div class="dot-s"></div>Kapila Theertham</div>
+          <div class="stop-item"><div class="dot-s"></div>Srinivasa Mangapuram</div>
+          <div class="stop-item"><div class="dot-s"></div>Ghat Road Mid</div>
+          <div class="stop-item last"><div class="dot-s"></div><b>Tirumala Bus Stand</b></div>
+        </div>
+      </div>
+      <div class="dir-card" id="dirRev" onclick="selectDirection('reverse')">
+        <div class="dtitle">Tirumala → Tirupati</div>
+        <div class="dir-arrow">⬇</div>
+        <div class="stop-list">
+          <div class="stop-item"><div class="dot-s"></div>Tirumala Bus Stand</div>
+          <div class="stop-item"><div class="dot-s"></div>Ghat Road Mid</div>
+          <div class="stop-item"><div class="dot-s"></div>Srinivasa Mangapuram</div>
+          <div class="stop-item"><div class="dot-s"></div>Kapila Theertham</div>
+          <div class="stop-item"><div class="dot-s"></div>Alipiri</div>
+          <div class="stop-item last"><div class="dot-s"></div><b>Tirupati CBS</b></div>
+        </div>
+      </div>
+    </div>
+    <button class="btn" id="dirConfirmBtn" onclick="confirmDirection()" style="background:#334155;cursor:not-allowed;" disabled>
+      ▶ Confirm Direction &amp; Continue
+    </button>
+    <div id="dirErr" class="err"></div>
+  </div>
+</div>
+
+<!-- BATTERY ANALYSIS -->
+<div class="analysis-wrap" id="analysisWrap">
+  <div class="analysis-box">
+    <h2 id="analysisTitle">🔋 Pre-Trip Battery Analysis</h2>
+    <div class="fg"><label>Battery %</label><input id="aBat" type="number" placeholder="e.g. 85" min="1" max="100"></div>
+    <div class="fg"><label>Temperature °C</label><input id="aTemp" type="number" placeholder="e.g. 35"></div>
+    <div class="fg"><label>Traffic Condition</label>
+      <select id="aTraffic"><option value="low">Low</option><option value="normal" selected>Normal</option><option value="high">High</option><option value="jam">Jam</option></select></div>
+    <div class="fg"><label>AC Status</label>
+      <select id="aAC"><option value="1">ON</option><option value="0">OFF</option></select></div>
+    <button class="btn" onclick="runAnalysis()" id="analyseBtn">Analyse Battery</button>
+    <div id="analysisResult" style="display:none;margin-top:20px;">
+      <div class="result-row"><span class="label">Battery available</span><span class="val" id="arBatKwh">--</span></div>
+      <div class="result-row"><span class="label">Route needs (19 km, full bus)</span><span class="val" id="arRouteKwh">--</span></div>
+      <div class="result-row"><span class="label">Energy to charging station</span><span class="val" id="arStationKwh">--</span></div>
+      <div class="result-row"><span class="label">Total needed</span><span class="val" id="arTotalKwh">--</span></div>
+      <div class="result-row"><span class="label">Can complete full route?</span><span id="arStatus">--</span></div>
+      <div style="font-size:12px;color:#64748b;margin:14px 0 6px;">Energy breakdown (worst case — full bus):</div>
+      <div class="breakdown-grid">
+        <div class="bk-item"><div class="bk-label">Base consumption</div><div class="bk-val" id="bkBase">--</div><div class="bk-unit">kWh</div></div>
+        <div class="bk-item"><div class="bk-label">Passenger load</div><div class="bk-val" id="bkPax">--</div><div class="bk-unit">kWh</div></div>
+        <div class="bk-item"><div class="bk-label">AC overhead</div><div class="bk-val" id="bkAC">--</div><div class="bk-unit">kWh</div></div>
+        <div class="bk-item"><div class="bk-label">Traffic penalty</div><div class="bk-val" id="bkTraffic">--</div><div class="bk-unit">kWh</div></div>
+      </div>
+      <div class="conditions-box">
+        <div class="ct">Passenger assumption: <span id="cPax">--</span></div>
+        <div class="ct">AC load factor: <span id="cAC">--</span></div>
+        <div class="ct">Traffic penalty: <span id="cTraffic">--</span></div>
+      </div>
+      <div id="criticalBatteryBlock" class="critical-block" style="display:none;">
+        <div class="cb-title" id="critTitle">🚫 Trip NOT Recommended</div>
+        <div class="cb-msg" id="critMsg"></div>
+        <div class="cb-action" id="critAction"></div>
+      </div>
+      <div id="stopLimitBox" class="stop-limit-box" style="display:none;">
+        <div class="title">⚠️ Passenger Boarding Limit</div>
+        <div class="detail" id="stopLimitMsg"></div>
+      </div>
+      <div class="station-info">
+        <div class="sname" id="arStationName">--</div>
+        <div class="sdetail" id="arStationDetail">--</div>
+      </div>
+      <button class="btn" id="startTripBtn" onclick="proceedToTrip()" style="margin-top:8px;">▶ Start Trip</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div class="main" id="mainDash">
+  <div class="left-panel">
+    <div class="alert" id="alertBox"></div>
+    <div class="charge-banner" id="chargeBanner">
+      <div class="cb-title">⚡ Charging Station Recommendation</div>
+      <div id="chargeStationList"></div>
+    </div>
+    <div class="voice-indicator">
+      <span class="voice-dot" id="voiceDot"></span>
+      <span id="voiceText">Voice announcements active</span>
+    </div>
+    <!-- YOLOv8 sync status only — no explanation box -->
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncText">YOLOv8: waiting for data...</span>
+    </div> 
+    <!-- LIVE COUNT -->
+    <div class="pax-card">
+      <div style="font-size:12px;color:#64748b;margin-bottom:8px;"><span class="dot"></span>Live Passenger Count</div>
+      <div class="pax-number" id="paxBig">0</div>
+      <div class="pax-label">passengers onboard / 50</div>
+      <div class="pax-bar-wrap"><div class="pax-bar" id="paxBar" style="width:0%"></div></div>
+      <div style="font-size:12px;color:#64748b;margin-top:6px;" id="paxSeats">50 seats available · 0% load</div>
+    </div>
+    <div class="card">
+      <h3>Current Stop</h3>
+      <div style="font-size:15px;font-weight:700;color:#38bdf8;margin:6px 0;" id="currentStopName">--</div>
+      <div style="font-size:12px;color:#64748b;" id="currentStopInfo">Stop 1 of 6</div>
+      <button class="next-stop-btn" id="nextStopBtn" onclick="goToNextStop()" style="margin-top:10px;">▶ Next Stop</button>
+      <button class="next-stop-btn" id="arrivedChargeBtn" onclick="startCharging()" style="display:none;background:#16a34a;margin-top:6px;">⚡ Arrived at Charging Station — Start Charging</button>
+    </div>
+    <div class="card">
+      <h3>Live Stats</h3>
+      <div class="stats">
+        <div class="stat"><div class="v" id="svBat">--%</div><div class="u">Battery</div></div>
+        <div class="stat"><div class="v" id="svPax">0/50</div><div class="u">Passengers</div></div>
+        <div class="stat"><div class="v" id="svEnergy">--</div><div class="u">kWh used</div></div>
+        <div class="stat"><div class="v" id="svRange">--</div><div class="u">km range</div></div>
+      </div>
+      <div class="bat-bar" style="margin-top:10px;"><div class="bat-fill" id="batFill"></div></div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px;" id="svKwh"></div>
+    </div>
+    <div class="card">
+      <h3>Energy Breakdown (kWh)</h3>
+      <div class="stats" style="margin-top:6px;">
+        <div class="stat"><div class="v" id="bBase" style="font-size:16px;">--</div><div class="u">Base</div></div>
+        <div class="stat"><div class="v" id="bPax"  style="font-size:16px;">--</div><div class="u">Passengers</div></div>
+        <div class="stat"><div class="v" id="bAC"   style="font-size:16px;">--</div><div class="u">AC</div></div>
+        <div class="stat"><div class="v" id="bTraf" style="font-size:16px;">--</div><div class="u">Traffic</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Passenger Events — Stop by Stop</h3>
+      <div id="stopLog"></div>
+    </div>
+    <button class="btn-sm btn-end" id="endBtn" style="display:none;margin-top:4px;" onclick="endTrip()">■ End Trip</button>
+  </div>
+  <div class="map-area"><div id="map"></div></div>
+</div>
+
+<script>
+const ALL_STOPS_FWD=[
+  {name:"Tirupati CBS (Central Bus Station)",lat:13.6288,lon:79.4192,km:0.0,sid:1},
+  {name:"Alipiri",lat:13.6388,lon:79.4074,km:3.5,sid:2},
+  {name:"Kapila Theertham",lat:13.6420,lon:79.4010,km:5.2,sid:3},
+  {name:"Srinivasa Mangapuram",lat:13.6550,lon:79.3900,km:8.0,sid:4},
+  {name:"Tirumala Ghat Road Mid",lat:13.6690,lon:79.3710,km:13.0,sid:5},
+  {name:"Tirumala Bus Stand",lat:13.6833,lon:79.3478,km:19.0,sid:6},
+];
+const ALL_STOPS_REV=[
+  {name:"Tirumala Bus Stand",lat:13.6833,lon:79.3478,km:0.0,sid:11},
+  {name:"Tirumala Ghat Road Mid",lat:13.6690,lon:79.3710,km:6.0,sid:12},
+  {name:"Srinivasa Mangapuram",lat:13.6550,lon:79.3900,km:11.0,sid:13},
+  {name:"Kapila Theertham",lat:13.6420,lon:79.4010,km:13.8,sid:14},
+  {name:"Alipiri",lat:13.6388,lon:79.4074,km:15.5,sid:15},
+  {name:"Tirupati CBS (Central Bus Station)",lat:13.6288,lon:79.4192,km:19.0,sid:16},
+];
+const CHARGING_DEPOTS=[
+  {name:"Alipiri EV Charging Depot",lat:13.6388,lon:79.4074,type:"DC Fast 150kW"},
+  {name:"Tirupati CBS Depot Charger",lat:13.6288,lon:79.4192,type:"AC 22kW"},
+  {name:"Renigunta Airport Depot",lat:13.6470,lon:79.5180,type:"DC Fast 100kW"},
+  {name:"Tirumala Bus Stand Charger",lat:13.6833,lon:79.3478,type:"DC Fast 60kW"},
+];
+
+const synth=window.speechSynthesis;
+let driverId=null,driverName='',tripId=null;
+let currentBat=90,totalEnergy=0,currentStopIdx=0,lastSafeStopIdx=5;
+let analysisData=null,map,busMarker,stopMarkers=[];
+let tripRunning=false,currentPax=0,lastAlertSpoken='';
+let tripDirection=null,ROUTE_STOPS=[],lastPaxTimestamp=0,chargingInProgress=false;
+
+function speak(t,p=false){if(!synth)return;if(p)synth.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-IN';u.rate=0.95;u.volume=1.0;document.getElementById('voiceDot').classList.add('speaking');document.getElementById('voiceText').textContent='🔊 '+t;u.onend=()=>{document.getElementById('voiceDot').classList.remove('speaking');document.getElementById('voiceText').textContent='Voice announcements active';};synth.speak(u);}
+function announceAlert(t,l){if(t===lastAlertSpoken)return;lastAlertSpoken=t;if(l==='critical')speak('Critical alert! '+t,true);else if(l==='low')speak('Warning! Low battery. '+t,true);else speak('Attention! '+t,false);}
+
+function showLogin(){['registerWrap','directionWrap'].forEach(id=>document.getElementById(id).style.display='none');document.getElementById('loginWrap').style.display='flex';}
+function showRegister(){document.getElementById('loginWrap').style.display='none';document.getElementById('registerWrap').style.display='flex';loadDriversList();}
+
+async function doLogin(){
+  const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({license_no:document.getElementById('lic').value,password:document.getElementById('pwd').value})});
+  const d=await res.json();
+  if(d.success){driverId=d.driver_id;driverName=d.name;document.getElementById('loginWrap').style.display='none';document.getElementById('directionWrap').style.display='flex';}
+  else{document.getElementById('lerr').textContent=d.message||'Invalid credentials!';}
+}
+async function doRegister(){
+  const name=document.getElementById('regName').value.trim(),license=document.getElementById('regLicense').value.trim(),phone=document.getElementById('regPhone').value.trim(),pwd=document.getElementById('regPwd').value.trim();
+  document.getElementById('rerr').textContent='';document.getElementById('rsuc').textContent='';
+  if(!name||!license||!pwd){document.getElementById('rerr').textContent='All fields required!';return;}
+  const res=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,license_no:license,phone,password:pwd})});
+  const d=await res.json();
+  if(d.success){document.getElementById('rsuc').textContent='✅ '+d.message;['regName','regLicense','regPhone','regPwd'].forEach(id=>document.getElementById(id).value='');loadDriversList();}
+  else{document.getElementById('rerr').textContent='❌ '+d.message;}
+}
+async function loadDriversList(){
+  try{const res=await fetch('/api/drivers');const drivers=await res.json();document.getElementById('driversList').innerHTML=drivers.map(d=>`<div class="driver-item"><div><div class="dname">${d.name}</div><div class="dlicense">${d.license_no}</div></div><div style="font-size:11px;color:#64748b;">${d.phone||''}</div></div>`).join('');}catch(e){}
+}
+
+function selectDirection(dir){
+  tripDirection=dir;
+  document.getElementById('dirFwd').classList.toggle('selected',dir==='forward');
+  document.getElementById('dirRev').classList.toggle('selected',dir==='reverse');
+  const btn=document.getElementById('dirConfirmBtn');btn.disabled=false;btn.style.background='#0ea5e9';btn.style.cursor='pointer';
+  document.getElementById('dirErr').textContent='';
+}
+function confirmDirection(){
+  if(!tripDirection){document.getElementById('dirErr').textContent='Please select a direction!';return;}
+  ROUTE_STOPS=tripDirection==='forward'?ALL_STOPS_FWD:ALL_STOPS_REV;
+  lastSafeStopIdx=ROUTE_STOPS.length-1;
+  document.getElementById('headerRoute').textContent=tripDirection==='forward'?'— Tirupati → Tirumala':'— Tirumala → Tirupati';
+  document.getElementById('hinfo').textContent=`Driver: ${driverName} | ${tripDirection==='forward'?'Tirupati → Tirumala':'Tirumala → Tirupati'} | APSRTC`;
+  document.getElementById('analysisTitle').textContent=tripDirection==='forward'?'🔋 Pre-Trip Battery Analysis — Tirupati → Tirumala':'🔋 Pre-Trip Battery Analysis — Tirumala → Tirupati';
+  document.getElementById('directionWrap').style.display='none';
+  document.getElementById('analysisWrap').style.display='block';
+}
+
+async function runAnalysis(){
+  const bat=document.getElementById('aBat').value,temp=document.getElementById('aTemp').value;
+  if(!bat||!temp){alert('Enter battery % and temperature!');return;}
+  document.getElementById('analyseBtn').textContent='Analysing...';
+  const res=await fetch('/api/battery-analysis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({battery_pct:bat,battery_capacity:200,avg_speed:35,ac_on:document.getElementById('aAC').value,ambient_temp:temp,traffic_level:document.getElementById('aTraffic').value})});
+  analysisData=await res.json();
+  document.getElementById('analyseBtn').textContent='Analyse Battery';
+  document.getElementById('analysisResult').style.display='block';
+  document.getElementById('arBatKwh').textContent=analysisData.battery_kwh+' kWh';
+  document.getElementById('arRouteKwh').textContent=analysisData.total_route_energy_kwh+' kWh';
+  document.getElementById('arStationKwh').textContent=analysisData.energy_to_station_kwh+' kWh';
+  document.getElementById('arTotalKwh').textContent=analysisData.total_needed_kwh+' kWh';
+  const batPct=parseFloat(bat);
+  const cBlock=document.getElementById('criticalBatteryBlock');
+  const sBtn=document.getElementById('startTripBtn');
+  if(batPct<=10){
+    cBlock.style.display='block';document.getElementById('critTitle').textContent='🚫 Trip BLOCKED — Battery Too Low';
+    document.getElementById('critMsg').innerHTML=`Battery critically low at <b>${batPct}%</b>. Cannot start trip.<br>Minimum required: <b>20%</b>.`;
+    document.getElementById('critAction').textContent='👉 Charge the bus before starting any trip.';
+    sBtn.disabled=true;sBtn.style.background='#334155';sBtn.style.cursor='not-allowed';sBtn.textContent='🚫 Trip Blocked — Charge Battery First';
+    document.getElementById('arStatus').innerHTML='<span class="status-bad">🚫 BLOCKED</span>';
+    speak('Battery critically low. Trip is blocked.',true);
+  }else if(batPct<=20){
+    cBlock.style.display='block';document.getElementById('critTitle').textContent='⚠️ Low Battery Warning';
+    document.getElementById('critMsg').innerHTML=`Battery very low at <b>${batPct}%</b>. May not complete full route.`;
+    document.getElementById('critAction').textContent='⚠️ Go directly to charging station after starting.';
+    sBtn.disabled=false;sBtn.style.background='#b45309';sBtn.style.cursor='pointer';sBtn.textContent='⚠️ Start Trip (Low Battery — Caution)';
+    document.getElementById('arStatus').innerHTML='<span class="status-bad">⚠️ Very Low</span>';
+    speak('Warning. Battery very low. Go to charging station immediately.',true);
+  }else{
+    cBlock.style.display='none';sBtn.disabled=false;sBtn.style.background='#0ea5e9';sBtn.style.cursor='pointer';sBtn.textContent='▶ Start Trip';
+    if(analysisData.can_complete_route){
+      document.getElementById('arStatus').innerHTML='<span class="status-ok">Yes — Full route possible</span>';
+      lastSafeStopIdx=ROUTE_STOPS.length-1;document.getElementById('stopLimitBox').style.display='none';
+    }else{
+      document.getElementById('arStatus').innerHTML='<span class="status-bad"> No — Partial route only</span>';
+      lastSafeStopIdx=analysisData.last_safe_stop_idx;
+      document.getElementById('stopLimitBox').style.display='block';
+      document.getElementById('stopLimitMsg').innerHTML=`Boarding allowed only up to stop <b>${lastSafeStopIdx+1}</b>: <b>${analysisData.last_safe_stop_name}</b>.`;
+      speak('Warning! Boarding stops at '+analysisData.last_safe_stop_name+'.');
+    }
+  }
+  if(analysisData.breakdown){const bd=analysisData.breakdown;document.getElementById('bkBase').textContent=bd.base_kwh;document.getElementById('bkPax').textContent=bd.passenger_kwh;document.getElementById('bkAC').textContent=bd.ac_kwh;document.getElementById('bkTraffic').textContent=bd.traffic_kwh;}
+  if(analysisData.conditions){const cd=analysisData.conditions;document.getElementById('cPax').textContent=cd.passenger_assumption;document.getElementById('cAC').textContent=cd.ac_load_pct+'%';document.getElementById('cTraffic').textContent=cd.traffic_penalty_pct+'% extra';}
+  if(analysisData.nearest_station){const st=analysisData.nearest_station;document.getElementById('arStationName').textContent='⚡ Target: '+st.name;document.getElementById('arStationDetail').textContent=`${st.charger_type} · ${st.distance_km} km · ~${st.est_minutes} mins`;}
+}
+
+function proceedToTrip(){
+  document.getElementById('analysisWrap').style.display='none';
+  document.getElementById('mainDash').style.display='block';
+  currentBat=parseFloat(document.getElementById('aBat').value)||80;
+  initMap();startTrip();
+}
+
+function initMap(){
+  const center=ROUTE_STOPS[Math.floor(ROUTE_STOPS.length/2)];
+
+  map=L.map('map').setView([center.lat,center.lon],13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+  L.polyline(ROUTE_STOPS.map(s=>[s.lat,s.lon]),{color:'#38bdf8',weight:4,opacity:0.7}).addTo(map);
+  const mid=ROUTE_STOPS[Math.floor(ROUTE_STOPS.length/2)];
+  L.marker([mid.lat,mid.lon],{icon:L.divIcon({html:`<div style="background:#1e3a5f;border:1px solid #38bdf8;color:#38bdf8;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:700;white-space:nowrap;">${tripDirection==='forward'?'⬇ Tirupati→Tirumala':'⬇ Tirumala→Tirupati'}</div>`,className:'',iconAnchor:[50,10]})}).addTo(map);
+  ROUTE_STOPS.forEach((s,i)=>{const ok=i<=lastSafeStopIdx;const m=L.circleMarker([s.lat,s.lon],{radius:8,fillColor:ok?'#1d4ed8':'#7f1d1d',color:ok?'#38bdf8':'#ef4444',weight:2,fillOpacity:0.9}).addTo(map).bindPopup(`<b>${s.name}</b><br>Stop ${i+1}<br>${ok?'✅ Boarding allowed':'🚫 No boarding'}`);stopMarkers.push(m);});
+  CHARGING_DEPOTS.forEach(d=>{L.marker([d.lat,d.lon],{icon:L.divIcon({html:`<div style="background:#854d0e;border:2px solid #fbbf24;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;">⚡</div>`,iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map).bindPopup(`<b>⚡ ${d.name}</b><br>${d.type}`);});
+  if(analysisData&&analysisData.nearest_station){const ns=analysisData.nearest_station;L.marker([ns.latitude,ns.longitude],{icon:L.divIcon({html:`<div style="background:#166534;border:3px solid #4ade80;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;">⚡</div>`,iconSize:[36,36],iconAnchor:[18,18]})}).addTo(map).bindPopup(`<b>🎯 TARGET STATION</b><br>${ns.name}`);}
+  busMarker=L.marker([ROUTE_STOPS[0].lat,ROUTE_STOPS[0].lon],{icon:L.divIcon({html:`<div style="background:#0ea5e9;border:2px solid #fff;border-radius:6px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:20px;">🚌</div>`,iconSize:[34,34],iconAnchor:[17,17]})}).addTo(map);
+}
+
+async function startTrip(){
+  const res=await fetch('/api/trip/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bus_id:1,driver_id:driverId,route_id:1,battery_start_pct:currentBat})});
+  const d=await res.json();if(!d.success)return;
+  tripId=d.trip_id;tripRunning=true;
+  document.getElementById('endBtn').style.display='block';
+  loadStop(0);
+  setInterval(pollPassengerCount,2000);
+  setInterval(checkYoloStale,5000);
+  setInterval(updateEnergyPrediction,5000);
+  speak('Trip started. '+(tripDirection==='forward'?'Tirupati to Tirumala':'Tirumala to Tirupati')+'.');
+}
+
+async function loadStop(idx){
+  if(idx>=ROUTE_STOPS.length){await autoEndTrip();return;}
+  currentStopIdx=idx;const stop=ROUTE_STOPS[idx];
+  await fetch('/api/update-stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stop_id:stop.sid})});
+
+  busMarker.setLatLng([stop.lat,stop.lon]);map.panTo([stop.lat,stop.lon],{animate:true});
+  
+  stopMarkers.forEach((m,j)=>{const ok=j<=lastSafeStopIdx;m.setStyle({fillColor:j===idx?'#f59e0b':(ok?'#1d4ed8':'#7f1d1d'),radius:j===idx?12:8});});
+  document.getElementById('currentStopName').textContent=stop.name;
+  document.getElementById('currentStopInfo').textContent=`Stop ${idx+1} of ${ROUTE_STOPS.length}`;
+  const ok=idx<=lastSafeStopIdx;const nextName=ROUTE_STOPS[idx+1]?.name||'End';
+  const nb=document.getElementById('nextStopBtn');
+  if(idx===ROUTE_STOPS.length-1){nb.textContent=' Last Stop — End Trip';nb.style.background='#16a34a';}
+  else{nb.textContent=ok?`▶ Next Stop: ${nextName}`:`🚫 No Boarding — Next: ${nextName}`;nb.style.background=ok?'#7c3aed':'#431407';}
+  document.getElementById('arrivedChargeBtn').style.display=(currentBat<=20&&!chargingInProgress)?'block':'none';
+  const kmSeg=idx===0?stop.km:stop.km-ROUTE_STOPS[idx-1].km;
+  currentBat=Math.max(2,currentBat-kmSeg*1.1);
+  speak(`Arriving at ${stop.name}. Stop ${idx+1} of ${ROUTE_STOPS.length}.`);
+  addStopRow(stop,!ok);
+}
+
+async function goToNextStop(){
+  const next=currentStopIdx+1;if(next>=ROUTE_STOPS.length){await autoEndTrip();return;}
+  const btn=document.getElementById('nextStopBtn');btn.disabled=true;await loadStop(next);btn.disabled=false;
+}
+
+function startCharging(){
+  if(chargingInProgress)return;
+  chargingInProgress=true;
+  document.getElementById('arrivedChargeBtn').style.display='none';
+  document.getElementById('chargingOverlay').classList.add('show');
+  speak('Charging started. Battery will be full in sixty seconds.',true);
+  const startPct=currentBat,totalTime=60;let elapsed=0;
+  const iv=setInterval(()=>{
+    elapsed++;
+    const nb=Math.min(100,startPct+(100-startPct)*(elapsed/totalTime));
+    currentBat=nb;
+    document.getElementById('chargePct').textContent=nb.toFixed(0)+'%';
+    document.getElementById('chargeFill').style.width=nb+'%';
+    document.getElementById('chargeTimer').textContent=(totalTime-elapsed)+'s remaining';
+    document.getElementById('chargeMsg').textContent=nb<50?'Rapid charging...':nb<80?'Halfway there!':'Almost full!';
+    if(elapsed>=totalTime){
+      clearInterval(iv);currentBat=100;
+      document.getElementById('chargePct').textContent='100%';document.getElementById('chargeFill').style.width='100%';
+      document.getElementById('chargeTimer').textContent=' Complete!';document.getElementById('chargeMsg').textContent='Battery fully charged!';
+      speak('Battery fully charged. Ready to continue.',true);
+      setTimeout(()=>{
+        document.getElementById('chargingOverlay').classList.remove('show');chargingInProgress=false;
+        document.getElementById('svBat').textContent='100%';
+        const f=document.getElementById('batFill');f.style.width='100%';f.style.background='#22c55e';
+        document.getElementById('alertBox').className='alert';document.getElementById('chargeBanner').style.display='none';
+        document.getElementById('arrivedChargeBtn').style.display='none';lastAlertSpoken='';
+      },2500);
+    }
+  },1000);
+}
+
+// FIXED: poll /api/current-pax and update dashboard live
+async function pollPassengerCount(){
+  if(!tripId)return;
+  try{
+    const res=await fetch('/api/current-pax');
+    if(res.ok){
+      const d=await res.json();
+      currentPax=d.total_onboard||0;
+      const load=d.load_percent||0,seats=d.seats_available||50;
+      document.getElementById('paxBig').textContent=currentPax;
+      document.getElementById('paxBar').style.width=load+'%';
+      document.getElementById('paxBar').style.background=load<70?'#22c55e':load<90?'#f97316':'#ef4444';
+      document.getElementById('paxSeats').textContent=seats+' seats available · '+load.toFixed(0)+'% load';
+      document.getElementById('svPax').textContent=currentPax+'/50';
+      lastPaxTimestamp=Date.now();
+      document.getElementById('syncDot').classList.add('ok');
+      document.getElementById('syncText').textContent=`YOLOv8: synced ✓ — ${currentPax} onboard`;
+    }
+  }catch(e){
+    document.getElementById('syncDot').classList.remove('ok');
+    document.getElementById('syncText').textContent='YOLOv8: not connected';
+  }
+}
+
+function checkYoloStale(){
+  if(!tripId||lastPaxTimestamp===0)return;
+  if(Date.now()-lastPaxTimestamp>10000){
+    document.getElementById('syncDot').classList.remove('ok');
+    document.getElementById('syncText').textContent='YOLOv8: no data — run realtime_counter.py';
+  }
+}
+
+async function updateEnergyPrediction(){
+  if(!tripId||!tripRunning||chargingInProgress)return;
+  const stop=ROUTE_STOPS[currentStopIdx];
+  const temp=parseFloat(document.getElementById('aTemp').value)||35;
+  const ac=document.getElementById('aAC').value,traffic=document.getElementById('aTraffic').value;
+  const kmSeg=currentStopIdx===0?stop.km:stop.km-ROUTE_STOPS[currentStopIdx-1].km;
+  const kmRemain=ROUTE_STOPS[ROUTE_STOPS.length-1].km-stop.km;
+  try{
+    const pred=await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trip_id:tripId,distance_km:kmSeg||1,speed_kmh:35,passenger_count:currentPax,ac_on:ac,ambient_temp_c:temp,traffic_level:traffic,battery_pct:currentBat,battery_capacity_kwh:200,km_remaining:kmRemain,latitude:stop.lat,longitude:stop.lon})}).then(r=>r.json());
+    totalEnergy+=pred.predicted_kwh||0;updateUI(pred);
+    if(pred.alert){showChargingBanner(pred.smart_stations,pred.alert_level);announceAlert(pred.alert,pred.alert_level);}
+    else{document.getElementById('chargeBanner').style.display='none';}
+  }catch(e){}
+}
+
+function updateUI(pred){
+  document.getElementById('svBat').textContent=currentBat.toFixed(1)+'%';
+  document.getElementById('svEnergy').textContent=totalEnergy.toFixed(1);
+  document.getElementById('svRange').textContent=pred.estimated_range_km||'--';
+  document.getElementById('svKwh').textContent=(pred.battery_remaining_kwh||'--')+' kWh remaining';
+  const f=document.getElementById('batFill');f.style.width=currentBat+'%';f.style.background=currentBat>50?'#22c55e':currentBat>20?'#f97316':'#ef4444';
+  const kwh=pred.predicted_kwh||0;
+  document.getElementById('bBase').textContent=(kwh*0.54).toFixed(2);document.getElementById('bPax').textContent=(kwh*0.13).toFixed(2);
+  document.getElementById('bAC').textContent=(kwh*0.22).toFixed(2);document.getElementById('bTraf').textContent=(kwh*0.11).toFixed(2);
+  const ab=document.getElementById('alertBox');ab.className='alert';
+  if(pred.alert){ab.textContent='⚠️ '+pred.alert;if(pred.alert_level==='critical')ab.classList.add('critical');else if(pred.alert_level==='low')ab.classList.add('low');else ab.classList.add('warn');}
+  if(currentBat<=20&&!chargingInProgress)document.getElementById('arrivedChargeBtn').style.display='block';
+}
+
+function showChargingBanner(stations){
+  if(!stations||!stations.length)return;
+  document.getElementById('chargeBanner').style.display='block';
+  document.getElementById('chargeStationList').innerHTML=stations.map(s=>{
+    const cf=s.can_finish_then_charge,cr=s.can_reach_station;
+    const rc=cf?'rec-safe':cr?'rec-warn':'rec-crit',icon=cf?'✅':cr?'⚠️':'❌';
+    return `<div class="cb-station"><div><div style="font-weight:700;color:#e2e8f0;">⚡ ${s.name}</div><div style="color:#64748b;font-size:11px;">${s.charger_type} · ${s.energy_to_reach_kwh} kWh · ~${s.est_minutes} mins</div><span class="cb-rec ${rc}">${icon} ${s.recommendation}</span></div><div class="cb-dist">${s.distance_km} km</div></div>`;
+  }).join('');
+}
+
+function addStopRow(stop,blocked){
+  const load=Math.round(currentPax/50*100),badge=load<70?'bg':load<90?'bo':'br';
+  const div=document.createElement('div');div.className='stop-row';
+  if(blocked){div.style.cssText='background:#431407;padding:6px 8px;border-radius:6px;margin-bottom:4px;';div.innerHTML=`<span style="color:#fdba74;flex:1;font-size:12px;">🚫 ${stop.name}</span><span style="font-weight:700;margin:0 4px;">${currentPax}</span><span class="badge br">${load}%</span>`;}
+  else{div.innerHTML=`<span style="color:#94a3b8;flex:1;font-size:12px;">${stop.name}</span><span style="color:#22c55e;font-size:11px;margin:0 4px;">                                            </span><span style="font-weight:700;margin:0 4px;">${currentPax}</span><span class="badge ${badge}">${load}%</span>`;}
+  document.getElementById('stopLog').prepend(div);
+}
+
+async function autoEndTrip(){
+  tripRunning=false;
+  await fetch('/api/trip/end',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trip_id:tripId,battery_end_pct:currentBat,total_km:19.0,total_energy_kwh:totalEnergy.toFixed(2)})});
+  const ab=document.getElementById('alertBox');ab.className='alert warn';ab.style.display='block';
+  ab.textContent=' Trip Complete! Total: '+totalEnergy.toFixed(2)+' kWh | Battery: '+currentBat.toFixed(1)+'%';
+  document.getElementById('endBtn').style.display='none';document.getElementById('nextStopBtn').disabled=true;document.getElementById('nextStopBtn').textContent='Trip Ended';
+  speak('Trip completed. Total energy: '+totalEnergy.toFixed(1)+' kilowatt hours.');
+}
+async function endTrip(){tripRunning=false;await autoEndTrip();}
+</script>
+</body>
+</html>
